@@ -1,34 +1,41 @@
-const axios = require("axios");
+// src/logging-middleware/index.js
 
-let authToken = null;
+// Simple browser logger (no axios, no backend)
+let logs = JSON.parse(localStorage.getItem("logs")) || [];
 
-function setAuthToken(token) {
-  authToken = token;
+/**
+ * Log an event
+ * @param {string} event - Event name (e.g., "SHORTEN_URL")
+ * @param {object} details - Extra details about the event
+ */
+function logEvent(event, details = {}) {
+  const logEntry = {
+    event,
+    details,
+    timestamp: new Date().toISOString(),
+  };
+
+  logs.push(logEntry);
+  localStorage.setItem("logs", JSON.stringify(logs));
+
+  console.log("[LOG EVENT]", logEntry);
 }
 
 /**
- * Log function
- * @param {string} stack - "frontend" | "backend"
- * @param {string} level - "debug" | "info" | "warn" | "error" | "fatal"
- * @param {string} pkg   - package name
- * @param {string} message - message to log
+ * Get all stored logs
  */
-async function Log(stack, level, pkg, message) {
-  if (!authToken) {
-    console.error("Auth token missing. Call setAuthToken(token).");
-    return;
-  }
-
-  try {
-    const res = await axios.post(
-      "http://20.244.56.144/evaluation-service/logs",
-      { stack, level, package: pkg, message },
-      { headers: { Authorization: `Bearer ${authToken}` } }
-    );
-    console.log("Log created:", res.data);
-  } catch (err) {
-    console.error("Logging failed:", err.message);
-  }
+function getLogs() {
+  return logs;
 }
 
-module.exports = { setAuthToken, Log };
+/**
+ * Clear logs
+ */
+function clearLogs() {
+  logs = [];
+  localStorage.removeItem("logs");
+  console.log("All logs cleared.");
+}
+
+// ✅ CommonJS export (works with your setup)
+module.exports = { logEvent, getLogs, clearLogs };
